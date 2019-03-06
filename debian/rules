@@ -7,11 +7,11 @@ build-indep:
 
 build-stamp:
 	@echo Building
-	(cd ..; ./build-initrd.sh)
+	./build-initrd.sh
 	@echo done
 
 clean: checkdir
-	(cd ..; rm -rf out)
+	rm -rf out
 
 binary-arch:
 	-rm -rf debian/tmp
@@ -30,6 +30,7 @@ override_dh_auto_test:
 	    echo "Checking sh syntax of $$f"; \
 	    sh -n $$f; \
 	done
+
 checkdir:
 	@test -f debian/rules
 
