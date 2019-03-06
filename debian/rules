@@ -23,7 +23,7 @@ binary-indep:
 	install -p -o root -g root -m 644 scripts/geminipda debian/tmp/usr/share/initramfs-tools/scripts/geminipda
 	install -p -o root -g root -m 755 scripts/panic/telnet debian/tmp/usr/share/initramfs-tools/scripts/panic/telnet
 	install -p -o root -g root -m 755 hooks/halium debian/tmp/usr/share/initramfs-tools/hooks/halium
-	dpkg-gencontrol -DArchitecture=arm64
+	dpkg-gencontrol
 	dpkg --build debian/tmp ..
 
 binary:         binary-arch binary-indep
