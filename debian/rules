@@ -26,8 +26,6 @@ binary-indep:
 	dpkg-gencontrol -DArchitecture=arm64
 	dpkg --build debian/tmp ..
 
-binary-indep:
-
 binary:         binary-arch binary-indep
 
 override_dh_auto_test:
