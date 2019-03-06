@@ -1,3 +1,9 @@
+initramfs-tools-halium (0.96) stretch; urgency=low
+
+  * Initial changes for Gemian
+
+ -- Adam Boardman <adamboardman@gmail.com>  Wed, 6 Mar 2019 10:21:00 +0000
+
 initramfs-tools-halium (0.95) UNRELEASED; urgency=medium
 
   * Initial changes for Halium

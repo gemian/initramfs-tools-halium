@@ -1,10 +1,39 @@
 #!/usr/bin/make -f
 
-%:
-	dh $@
+# keep lintian happy:
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep:
+
+build-stamp:
+	@echo Building
+	(cd ..; ./build-initrd.sh)
+	@echo done
+
+clean: checkdir
+	(cd ..; rm -rf out)
+
+binary-arch:
+	-rm -rf debian/tmp
+	install -p -d -o root -g root -m 755 debian/tmp
+	install -p -d -o root -g root -m 755 debian/tmp/usr/share/kernel
+	install -p    -o root -g root -m 644 ../out/initrd.img-touch-arm64 debian/tmp/usr/share/kernel/ramdisk.cpio.gz
+	dpkg-gencontrol -DArchitecture=arm64
+	dpkg --build debian/tmp ..
+
+binary-indep:
+
+binary:         binary-arch binary-indep
 
 override_dh_auto_test:
-	@set -e; for f in etc/initramfs/post-update.d/* hooks/* scripts/panic/telnet scripts/halium usr/sbin/*; do \
+	@set -e; for f in etc/initramfs/post-update.d/* hooks/* scripts/panic/telnet scripts/geminipda usr/sbin/*; do \
 	    echo "Checking sh syntax of $$f"; \
 	    sh -n $$f; \
 	done
+checkdir:
+	@test -f debian/rules
+
+checkroot: checkdir
+	@test 0 = `id -u` || { echo "Error: not super-user"; exit 1; }
+
+.PHONY: binary binary-arch binary-indep clean checkroot checkdir build build-arch build-indep
