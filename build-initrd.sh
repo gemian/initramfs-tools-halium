@@ -10,7 +10,7 @@ APT_COMMAND="apt -y"
 usage() {
 	echo "Usage:
 
--a|--arch	Architecture to create initrd for. Default armhf
+-a|--arch	Architecture to create initrd for. Default arm64
 -m|--mirror	Custom mirror URL to use. Must serve your arch.
 "
 }
@@ -36,7 +36,7 @@ while [ $# -gt 0 ]; do
 done
 
 # Defaults for all arguments, so they can be set by the environment
-[ -z $ARCH ] && ARCH="armhf"
+[ -z $ARCH ] && ARCH="arm64"
 [ -z $MIRROR ] && MIRROR=$DEFAULTMIRROR
 [ -z $RELEASE ] && RELEASE="stable"
 [ -z $ROOT ] && ROOT=./build/$ARCH
@@ -45,7 +45,7 @@ done
 # list all packages needed for halium's initrd here
 [ -z $INCHROOTPKGS ] && INCHROOTPKGS="initramfs-tools dctrl-tools e2fsprogs libc6-dev zlib1g-dev libssl-dev busybox-static"
 
-BOOTSTRAP_BIN="qemu-debootstrap --arch $ARCH --variant=minbase"
+BOOTSTRAP_BIN="debootstrap --variant=minbase"
 
 umount_chroot() {
 	chroot $ROOT umount /sys >/dev/null 2>&1 || true
