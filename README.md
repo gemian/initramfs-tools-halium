@@ -12,9 +12,9 @@ Requirements:
 * `sudo` rights on the machine, to create the chroot
 
 1. Clone this repository into your home folder
-1. Install the prerequisites: `sudo apt install debootstrap qemu-user-static binfmt-support dpkg-dev`
+1. Install the prerequisites: `sudo apt install debootstrap dpkg-dev`
 1. `cd` into the repository
-1. Run `sudo ./build-initrd.sh -a [ARCH]`
+1. Run `./build-initrd.sh -a [ARCH]`
 
 The initrd will be saved as `./out/initrd.img-touch-$ARCH` by default.
 
