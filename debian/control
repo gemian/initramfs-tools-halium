@@ -2,7 +2,7 @@ Source: initramfs-tools-halium
 Section: utils
 Priority: optional
 Maintainer: Adam Boardman <adamboardman@gmail.com>
-Build-Depends: debhelper (>= 9), debootstrap
+Build-Depends: debhelper (>= 9), debootstrap, fakeroot, fakechroot
 Standards-Version: 4.1.3
 
 Package: initramfs-tools-halium

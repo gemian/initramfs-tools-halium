@@ -1,0 +1,8 @@
+123a124,130
+> 	# Ignore libfake dependencies as these are fake deps injected as part of running with fakeroot
+> 	case "${src}" in
+> 		*libfake*)
+> 			return 1
+> 			;;
+> 	esac
+> 

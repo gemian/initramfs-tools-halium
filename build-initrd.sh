@@ -45,11 +45,11 @@ done
 # list all packages needed for halium's initrd here
 [ -z $INCHROOTPKGS ] && INCHROOTPKGS="initramfs-tools dctrl-tools e2fsprogs libc6-dev zlib1g-dev libssl-dev busybox-static"
 
-BOOTSTRAP_BIN="debootstrap --variant=minbase"
+BOOTSTRAP_BIN="fakeroot fakechroot debootstrap --variant=minbase"
 
 umount_chroot() {
-	chroot $ROOT umount /sys >/dev/null 2>&1 || true
-	chroot $ROOT umount /proc >/dev/null 2>&1 || true
+	#fakeroot fakechroot chroot $ROOT umount /sys >/dev/null 2>&1 || true
+	#fakeroot fakechroot chroot $ROOT umount /proc >/dev/null 2>&1 || true
 	echo
 }
 
@@ -58,9 +58,9 @@ do_chroot() {
 	ROOT="$1"
 	CMD="$2"
 	echob "Executing \"$2\" in chroot"
-	chroot $ROOT mount -t proc proc /proc
-	chroot $ROOT mount -t sysfs sys /sys
-	chroot $ROOT $CMD
+	#fakeroot fakechroot chroot $ROOT mount -t proc proc /proc
+	#fakeroot fakechroot chroot $ROOT mount -t sysfs sys /sys
+	fakeroot fakechroot chroot $ROOT $CMD
 	umount_chroot
 	trap - INT EXIT
 }
@@ -91,6 +91,9 @@ if [ ! -e $ROOT/.min-done ]; then
 	# We also need to install dpkg-dev in order to use dpkg-architecture.
 	do_chroot $ROOT "$APT_COMMAND install dpkg-dev --no-install-recommends"
 
+	#Might need to fix the symlinks to be relative
+	#do_chroot $ROOT "symlinks -rcs ."
+
 	touch $ROOT/.min-done
 else
 	echob "Build environment for $ARCH found, reusing."
@@ -100,7 +103,14 @@ fi
 do_chroot $ROOT "$APT_COMMAND update"
 do_chroot $ROOT "$APT_COMMAND dist-upgrade"
 do_chroot $ROOT "$APT_COMMAND install $INCHROOTPKGS --no-install-recommends"
-DEB_HOST_MULTIARCH=$(chroot $ROOT dpkg-architecture -q DEB_HOST_MULTIARCH)
+DEB_HOST_MULTIARCH=$(fakeroot fakechroot chroot $ROOT dpkg-architecture -q DEB_HOST_MULTIARCH)
+
+if grep -Fq "libfake" $ROOT/usr/share/initramfs-tools/hook-functions; then
+	echo "hook-functions patched already"
+else
+	#Need to patch hook-functions
+	patch $ROOT/usr/share/initramfs-tools/hook-functions hook-functions.diff
+fi
 
 cp -a conf/halium ${ROOT}/usr/share/initramfs-tools/conf.d
 cp -a scripts/* ${ROOT}/usr/share/initramfs-tools/scripts

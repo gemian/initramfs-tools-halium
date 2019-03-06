@@ -16,8 +16,9 @@ clean: checkdir
 binary-arch:
 	-rm -rf debian/tmp
 	install -p -d -o root -g root -m 755 debian/tmp
+	install -p -d -o root -g root -m 755 debian/tmp/DEBIAN
 	install -p -d -o root -g root -m 755 debian/tmp/usr/share/kernel
-	install -p    -o root -g root -m 644 ../out/initrd.img-touch-arm64 debian/tmp/usr/share/kernel/ramdisk.cpio.gz
+	install -p    -o root -g root -m 644 out/initrd.img-touch-arm64 debian/tmp/usr/share/kernel/ramdisk.cpio.gz
 	dpkg-gencontrol -DArchitecture=arm64
 	dpkg --build debian/tmp ..
 
