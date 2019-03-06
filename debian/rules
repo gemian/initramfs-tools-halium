@@ -6,19 +6,23 @@ build-arch: build-stamp
 build-indep:
 
 build-stamp:
-	@echo Building
-	./build-initrd.sh
-	@echo done
 
 clean: checkdir
-	rm -rf out
 
 binary-arch:
+
+binary-indep:
 	-rm -rf debian/tmp
 	install -p -d -o root -g root -m 755 debian/tmp
 	install -p -d -o root -g root -m 755 debian/tmp/DEBIAN
-	install -p -d -o root -g root -m 755 debian/tmp/usr/share/kernel
-	install -p    -o root -g root -m 644 out/initrd.img-touch-arm64 debian/tmp/usr/share/kernel/ramdisk.cpio.gz
+	install -p -d -o root -g root -m 755 debian/tmp/usr/share/initramfs-tools/conf.d
+	install -p -d -o root -g root -m 755 debian/tmp/usr/share/initramfs-tools/scripts
+	install -p -d -o root -g root -m 755 debian/tmp/usr/share/initramfs-tools/scripts/panic
+	install -p -d -o root -g root -m 755 debian/tmp/usr/share/initramfs-tools/hooks
+	install -p -o root -g root -m 644 conf/halium debian/tmp/usr/share/initramfs-tools/conf.d/halium
+	install -p -o root -g root -m 644 scripts/geminipda debian/tmp/usr/share/initramfs-tools/scripts/geminipda
+	install -p -o root -g root -m 755 scripts/panic/telnet debian/tmp/usr/share/initramfs-tools/scripts/panic/telnet
+	install -p -o root -g root -m 755 hooks/halium debian/tmp/usr/share/initramfs-tools/hooks/halium
 	dpkg-gencontrol -DArchitecture=arm64
 	dpkg --build debian/tmp ..
 
