@@ -23,11 +23,18 @@ update_yamui() {
 	YAMUIPID=$!
 }
 
+update_yamui_exit() {
+    TEXT="$1"
+    kill "$YAMUIPID"
+	yamui -a 1 -t "$TEXT" -f 3 debian
+	YAMUIPID=$!
+}
+
 halium_panic() {
 	# Puts panic reason into kmsg and then starts the panic handlers
 	REASON="$1"
 	kill "$YAMUIPID"
-	yamui -a 1 -t "PANIC: $REASON" -f 3 debian
+	update_yamui_exit "PANIC: $REASON"
 	tell_kmsg "PANIC for reason: $REASON"
 	panic $REASON
 }
@@ -137,9 +144,7 @@ mount_stowaways() {
         if [ -e "/tmpmnt/etc/os-release" ]; then
             mount --bind /tmpmnt ${rootmnt}
             mkdir -p "${rootmnt}/data" # in new fs
-            update_yamui "Gemian booting - /"
-            sleep 1
-            kill "$YAMUIPID"
+            update_yamui_exit "Gemian booting - /"
             return 0
         else
             halium_panic "/etc/os-release not found on $path"
@@ -153,9 +158,7 @@ mount_stowaways() {
         if [ -d "/tmpmnt/.stowaways/${stowaways_os}" ]; then
             mount --bind /tmpmnt/.stowaways/${stowaways_os} ${rootmnt}
             mkdir -p "${rootmnt}/data" # in new fs
-            update_yamui "Gemian booting - /.stowaways/$stowaways_os"
-            sleep 1
-            kill "$YAMUIPID"
+            update_yamui_exit "Gemian booting - /.stowaways/$stowaways_os"
             return 0
         else
             halium_panic "/.stowaways/${stowaways_os} not found on $path"
@@ -193,9 +196,7 @@ mount_lvm() {
 			if [ -e "/tmpmnt/etc/os-release" ]; then
 				mount --bind /tmpmnt ${rootmnt}
 				mkdir -p "${rootmnt}/data" # in new fs
-				update_yamui "Gemian booting - /dev/$lvm_vg/$lv_name"
-				sleep 1
-				kill "$YAMUIPID"
+				update_yamui_exit "Gemian booting - /dev/$lvm_vg/$lv_name"
 				return 0
 			fi
 			umount /tmpmnt
@@ -290,9 +291,7 @@ mount_lvm() {
 			if [ -e "/tmpmnt/etc/os-release" ]; then
 				mount --bind /tmpmnt ${rootmnt}
 				mkdir -p "${rootmnt}/data" # in new fs
-				update_yamui "Gemian booting - /dev/$lvm_vg/$NEW_LV_NAME"
-				sleep 1
-				kill "$YAMUIPID"
+				update_yamui_exit "Gemian booting - /dev/$lvm_vg/$NEW_LV_NAME"
 				return 0
 			fi
 			umount /tmpmnt
