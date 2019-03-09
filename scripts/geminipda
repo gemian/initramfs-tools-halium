@@ -26,7 +26,7 @@ update_yamui() {
 halium_panic() {
 	# Puts panic reason into kmsg and then starts the panic handlers
 	REASON="$1"
-    kill "$YAMUIPID"
+	kill "$YAMUIPID"
 	yamui -a 1 -t "PANIC: $REASON" -f 3 debian
 	tell_kmsg "PANIC for reason: $REASON"
 	panic $REASON
@@ -93,15 +93,15 @@ resize_userdata_if_needed() {
 	if [ $dblocks -gt 10000 ]; then
 		resize2fs -f $path
 		tell_kmsg "resized userdata filesystem to fill $path"
-        update_yamui "resized userdata filesystem to fill $path"
+		update_yamui "resized userdata filesystem to fill $path"
 	fi
 }
 
 mount_stowaways() {
-    path="$1"
+	path="$1"
     
-    tell_kmsg "checking filesystem integrity for $path partition"
-    update_yamui "checking filesystem integrity for $path partition"
+	tell_kmsg "checking filesystem integrity for $path partition"
+	update_yamui "checking filesystem integrity for $path partition"
 	# Mounting and umounting first, let the kernel handle the journal and
 	# orphaned inodes (faster than e2fsck). Then, just run e2fsck forcing -y.
 	# Also check the amount of time used by to check the filesystem.
@@ -111,7 +111,7 @@ mount_stowaways() {
 	e2fsck -y $path >/run/e2fsck.out 2>&1
 	fsck_end=$(date +%s)
 	tell_kmsg "checking filesystem for $path took (including e2fsck) $((fsck_end - fsck_start)) seconds"
-    update_yamui "Checking filesystem for $path took (including e2fsck) $((fsck_end - fsck_start)) seconds"
+	update_yamui "Checking filesystem for $path took (including e2fsck) $((fsck_end - fsck_start)) seconds"
 
 	resize_userdata_if_needed ${path}
 
@@ -216,7 +216,7 @@ mount_lvm() {
             [ -z "/externalmnt/gemian-config.txt" ] && continue
             . /externalmnt/gemian-config.txt
             # Expect to find
-            # INSTALL_IMAGE=gemian-stretch.xz
+            # INSTALL_IMAGE=gemian-stretch.img.xz
             # LV_TO_REDUCE_NAME=home
             # LV_TO_REDUCE_SIZE=10G
             # NEW_LV_NAME=gemian
@@ -314,8 +314,7 @@ mount_lvm_or_stowaways() {
 }
 
 mountroot() {
-	yamui -a 1100 -t "Mounting Root" -f 3 debian &
-	YAMUIPID=$!
+	update_yamui "Mounting Root"
 
 	# list of possible userdata partition names
 	partlist="linux userdata"
@@ -337,8 +336,6 @@ mountroot() {
 	# Make sure the device has been created by udev before we try to mount
 	udevadm settle
 
-	kill "$YAMUIPID"
-
 	# find the right partition
 	for partname in $partlist; do
 		part=$(find /dev -name $partname | tail -1)
@@ -355,6 +352,4 @@ mountroot() {
 	run_scripts /scripts/local-bottom
 	[ "$quiet" != "y" ] && log_end_msg
 	
-	yamui -t "Gemian" -f 3 debian &
-   	YAMUIPID=$!
 }
