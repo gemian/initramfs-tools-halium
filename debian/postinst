@@ -8,5 +8,5 @@ if [ "$action" != configure ]; then
 fi
 
 echo Ramdisk installed to /usr/share/kernel/
-update-initramfs -tc -kgemini.cpio.gz -v -b /usr/share/kernel/
+update-initramfs -tc -kgemini.cpio.gz -v -b /usr/share/kernel
 

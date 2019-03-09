@@ -16,9 +16,18 @@ tell_kmsg() {
 	echo "initrd: $1" >/dev/kmsg || true
 }
 
+update_yamui() {
+    TEXT="$1"
+    kill "$YAMUIPID"
+	yamui -a 1100 -t "$TEXT" -f 3 debian &
+	YAMUIPID=$!
+}
+
 halium_panic() {
 	# Puts panic reason into kmsg and then starts the panic handlers
 	REASON="$1"
+    kill "$YAMUIPID"
+	yamui -a 1 -t "PANIC: $REASON" -f 3 debian
 	tell_kmsg "PANIC for reason: $REASON"
 	panic $REASON
 }
@@ -84,13 +93,15 @@ resize_userdata_if_needed() {
 	if [ $dblocks -gt 10000 ]; then
 		resize2fs -f $path
 		tell_kmsg "resized userdata filesystem to fill $path"
+        update_yamui "resized userdata filesystem to fill $path"
 	fi
 }
 
 mount_stowaways() {
     path="$1"
-
+    
     tell_kmsg "checking filesystem integrity for $path partition"
+    update_yamui "checking filesystem integrity for $path partition"
 	# Mounting and umounting first, let the kernel handle the journal and
 	# orphaned inodes (faster than e2fsck). Then, just run e2fsck forcing -y.
 	# Also check the amount of time used by to check the filesystem.
@@ -100,10 +111,12 @@ mount_stowaways() {
 	e2fsck -y $path >/run/e2fsck.out 2>&1
 	fsck_end=$(date +%s)
 	tell_kmsg "checking filesystem for $path took (including e2fsck) $((fsck_end - fsck_start)) seconds"
+    update_yamui "Checking filesystem for $path took (including e2fsck) $((fsck_end - fsck_start)) seconds"
 
 	resize_userdata_if_needed ${path}
 
 	tell_kmsg "mounting $path"
+	update_yamui "mounting $path"
 
 	# Mount the data partition to a temporary mount point
 	# FIXME: data=journal used as a workaround for bug 1387214
@@ -124,25 +137,186 @@ mount_stowaways() {
         if [ -e "/tmpmnt/etc/os-release" ]; then
             mount --bind /tmpmnt ${rootmnt}
             mkdir -p "${rootmnt}/data" # in new fs
+            update_yamui "Gemian booting - /"
+            sleep 1
+            kill "$YAMUIPID"
             return 0
         else
-            tell_kmsg "/etc/os-release not found on $path"
+            halium_panic "/etc/os-release not found on $path"
             return 1
         fi
     else
+        tell_kmsg "Found Stowaway $stowaways_os"
+        update_yamui "Found Stowaway $stowaways_os"
+
         # OS is located at /.stowaways/{$stowaways_os}
         if [ -d "/tmpmnt/.stowaways/${stowaways_os}" ]; then
             mount --bind /tmpmnt/.stowaways/${stowaways_os} ${rootmnt}
             mkdir -p "${rootmnt}/data" # in new fs
+            update_yamui "Gemian booting - /.stowaways/{$stowaways_os}"
+            sleep 1
+            kill "$YAMUIPID"
             return 0
         else
-            tell_kmsg "/.stowaways/${stowaways_os} not found on $path"
+            halium_panic "/.stowaways/${stowaways_os} not found on $path"
             return 1
         fi
     fi
 }
 
+mount_lvm() {
+    path="$1"
+    lvm_vg="$2"
+
+    tell_kmsg "Found LVM system"
+    update_yamui "Found LVM system"
+
+    lvm pvresize "$path"
+
+    #Seed the list with some likely volume names to check in case of no command line parameter
+    lv_list="gemian debian stretch buster"
+
+	# Check root_lv= parameter in command line, used to select between possibly multiple volume names
+	for x in $(cat /proc/cmdline); do
+		case ${x} in
+		root_lv=*)
+			lv_list=${x#*=}
+			tell_kmsg "Found LVM system: $lv_list"
+            update_yamui "Found LVM system: $lv_list"
+			;;
+		esac
+	done
+
+    for lv_name in lv_list; do
+		if mount -t ext4 /dev/$lvm_vg/$lv_name /tmpmnt; then
+		    # Use root of partition if /etc/os-release exists
+		    if [ -e "/tmpmnt/etc/os-release" ]; then
+		        mount --bind /tmpmnt ${rootmnt}
+                mkdir -p "${rootmnt}/data" # in new fs
+                update_yamui "Gemian booting - /dev/$lvm_vg/$lv_name"
+                sleep 1
+                kill "$YAMUIPID"
+                return 0
+            fi
+            umount /tmpmnt
+		fi
+	done
+
+    tell_kmsg "Installing (no gemian compatible logical volume not found)"
+    update_yamui "Installing (no gemian compatible logical volume not found)"
+
+	mkdir -p /externalmnt
+
+    //find external media for install image
+    EXTERNAL_MEDIA_DEVICES="/dev/mmcblk[1-9]*p[1-9]* /dev/sda[1-9]"
+
+    for external_drive in $EXTERNAL_MEDIA_DEVICES; do
+        if mount $external_drive /externalmnt; then
+            # Check for gemian-config.txt
+            [ -z "/externalmnt/gemian-config.txt" ] && continue
+            . /externalmnt/gemian-config.txt
+            # Expect to find
+            # INSTALL_IMAGE=gemian-stretch.xz
+            # LV_TO_REDUCE_NAME=home
+            # LV_TO_REDUCE_SIZE=10G
+            # NEW_LV_NAME=gemian
+            # NEW_LV_SIZE=10G (optional)
+
+            # Check if install image available
+            [ -z "/externalmnt/$INSTALL_IMAGE" ] && continue
+
+            # Check if space available - We should probably do some check:
+          	fsblocksize=$(dumpe2fs -h "/dev/$lvm_vg/$LV_TO_REDUCE_NAME" | grep "Block size" | awk {'print $3'})
+          	fsblocks=$(dumpe2fs -h "/dev/$lvm_vg/$LV_TO_REDUCE_NAME" | grep "Block count" | awk {'print $3'})
+          	fsfreeblocks=$(dumpe2fs -h "/dev/$lvm_vg/$LV_TO_REDUCE_NAME" | grep "Free blocks" | awk {'print $3'})
+
+            tell_kmsg "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
+            update_yamui "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
+
+            # Check and shrink fs
+            e2fsck -f -y "/dev/$lvm_vg/$LV_TO_REDUCE_NAME"
+            if ! lvm lvresize --resizefs --size $LV_TO_REDUCE_SIZE /dev/$lvm_vg/$LV_TO_REDUCE_NAME; then
+                halium_panic "Couldn't shrink $LV_TO_REDUCE_NAME."
+                return 1
+            fi
+
+            # Find new space available
+            FREE_EXTENTS=$(lvm vgdisplay $lvm_vg -c | cut -d ":" -f 16)
+
+            tell_kmsg "$lvm_vg - free extents - $FREE_EXTENTS"
+            update_yamui "$lvm_vg - free extents - $FREE_EXTENTS"
+
+            # Create new logical volume
+            if $NEW_LV_SIZE; then
+                if ! lvm lvcreate -L $NEW_LV_SIZE -n $NEW_LV_NAME $lvm_vg; then
+                    halium_panic "Couldn't create $NEW_LV_NAME with size $NEW_LV_SIZE on $lvm_vg."
+                    return 1
+                fi
+            else
+                if ! lvm lvcreate -l $FREE_EXTENTS -n $NEW_LV_NAME $lvm_vg; then
+                    halium_panic "Couldn't create $NEW_LV_NAME on $lvm_vg."
+                    return 1
+                fi
+            fi
+
+            tell_kmsg "Gemian Installing - $INSTALL_IMAGE to /dev/$lvm_vg/$NEW_LV_NAME"
+            update_yamui "Gemian Installing - $INSTALL_IMAGE to /dev/$lvm_vg/$NEW_LV_NAME"
+
+            # Uncompress install image to new file system
+            xz -d -c "/externalmnt/$INSTALL_IMAGE" > "/dev/$lvm_vg/$NEW_LV_NAME"
+            sync
+
+            tell_kmsg "Resizing filesystem /dev/$lvm_vg/$NEW_LV_NAME"
+            update_yamui "Resizing filesystem /dev/$lvm_vg/$NEW_LV_NAME"
+
+            # Resize file system to full size
+            resize2fs -f "/dev/$lvm_vg/$NEW_LV_NAME"
+            sync
+
+            if ! mount -t ext4 /dev/$lvm_vg/$NEW_LV_NAME /tmpmnt; then
+                halium_panic "Couldn't mount new file system."
+                return 1
+            fi
+
+            # Bind to the root mount and continue with boot
+            if [ -e "/tmpmnt/etc/os-release" ]; then
+  	        mount --bind /tmpmnt ${rootmnt}
+                mkdir -p "${rootmnt}/data" # in new fs
+                update_yamui "Gemian booting - /dev/$lvm_vg/$NEW_LV_NAME"
+                sleep 1
+                kill "$YAMUIPID"
+                return 0
+            fi
+            umount /tmpmnt
+
+        fi
+    done
+
+    halium_panic "Installable image not found on external drive"
+    return 1
+}
+
+mount_lvm_or_stowaways() {
+    path="$1"
+
+    vglist="sailfish planetlinux"
+
+    # Check for available volume groups
+    for vgname in $vglist; do
+        if lvm vgchange -a y "$vgname"; then
+            mount_lvm "$path" "$vgname"
+            return 0
+        fi
+	done
+
+    # Fallback to regular partitions
+    mount_stowaways "$path"
+}
+
 mountroot() {
+	yamui -a 1100 -t "Mounting Root" -f 3 debian &
+	YAMUIPID=$!
+
 	# list of possible userdata partition names
 	partlist="linux userdata"
 
@@ -163,12 +337,14 @@ mountroot() {
 	# Make sure the device has been created by udev before we try to mount
 	udevadm settle
 
+	kill "$YAMUIPID"
+
 	# find the right partition
 	for partname in $partlist; do
 		part=$(find /dev -name $partname | tail -1)
 		[ -z "$part" ] && continue
 		path=$(readlink -f $part)
-		[ -n "$path" ] && mount_stowaways "$path" && break
+		[ -n "$path" ] && mount_lvm_or_stowaways "$path" && break
 	done
 
 	if [ -z "$path" ]; then
@@ -178,4 +354,7 @@ mountroot() {
 	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/local-bottom"
 	run_scripts /scripts/local-bottom
 	[ "$quiet" != "y" ] && log_end_msg
+	
+	yamui -t "Gemian" -f 3 debian &
+   	YAMUIPID=$!
 }
