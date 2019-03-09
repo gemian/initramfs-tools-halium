@@ -19,7 +19,7 @@ tell_kmsg() {
 update_yamui() {
 	TEXT="$1"
 	kill "$YAMUIPID"
-	yamui -s 1 -t "$TEXT" -f 2 debian
+	yamui -s 1 -t "$TEXT" -f 2 debian &
 	YAMUIPID=$!
 }
 
