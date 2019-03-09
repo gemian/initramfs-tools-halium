@@ -17,23 +17,18 @@ tell_kmsg() {
 }
 
 update_yamui() {
-    TEXT="$1"
-    kill "$YAMUIPID"
-	yamui -a 1100 -t "$TEXT" -f 3 debian &
-	YAMUIPID=$!
+	TEXT="$1"
+	yamui -s 1 -t "$TEXT" -f 3 debian
 }
 
 update_yamui_exit() {
-    TEXT="$1"
-    kill "$YAMUIPID"
-	yamui -a 1 -t "$TEXT" -f 3 debian
-	YAMUIPID=$!
+	TEXT="$1"
+	yamui -s 1 -t "$TEXT" -f 3 debian
 }
 
 halium_panic() {
 	# Puts panic reason into kmsg and then starts the panic handlers
 	REASON="$1"
-	kill "$YAMUIPID"
 	update_yamui_exit "PANIC: $REASON"
 	tell_kmsg "PANIC for reason: $REASON"
 	panic $REASON
@@ -138,33 +133,32 @@ mount_stowaways() {
 		esac
 	done
 
-	if [ -z "$stowaways_os" ];
-	then
-        # Use root of partition if /etc/os-release exists
-        if [ -e "/tmpmnt/etc/os-release" ]; then
-            mount --bind /tmpmnt ${rootmnt}
-            mkdir -p "${rootmnt}/data" # in new fs
-            update_yamui_exit "Gemian booting - /"
-            return 0
-        else
-            halium_panic "/etc/os-release not found on $path"
-            return 1
-        fi
-    else
-        tell_kmsg "Found Stowaway $stowaways_os"
-        update_yamui "Found Stowaway $stowaways_os"
+	if [ -z "$stowaways_os" ]; then
+		# Use root of partition if /etc/os-release exists
+		if [ -e "/tmpmnt/etc/os-release" ]; then
+			mount --bind /tmpmnt ${rootmnt}
+			mkdir -p "${rootmnt}/data" # in new fs
+			update_yamui_exit "Gemian booting - /"
+			return 0
+		else
+			halium_panic "/etc/os-release not found on $path"
+			return 1
+		fi
+	else
+		tell_kmsg "Found Stowaway $stowaways_os"
+		update_yamui "Found Stowaway $stowaways_os"
 
-        # OS is located at /.stowaways/{$stowaways_os}
-        if [ -d "/tmpmnt/.stowaways/${stowaways_os}" ]; then
-            mount --bind /tmpmnt/.stowaways/${stowaways_os} ${rootmnt}
-            mkdir -p "${rootmnt}/data" # in new fs
-            update_yamui_exit "Gemian booting - /.stowaways/$stowaways_os"
-            return 0
-        else
-            halium_panic "/.stowaways/${stowaways_os} not found on $path"
-            return 1
-        fi
-    fi
+		# OS is located at /.stowaways/{$stowaways_os}
+		if [ -d "/tmpmnt/.stowaways/${stowaways_os}" ]; then
+			mount --bind /tmpmnt/.stowaways/${stowaways_os} ${rootmnt}
+			mkdir -p "${rootmnt}/data" # in new fs
+			update_yamui_exit "Gemian booting - /.stowaways/$stowaways_os"
+			return 0
+		else
+			halium_panic "/.stowaways/${stowaways_os} not found on $path"
+			return 1
+		fi
+	fi
 }
 
 mount_lvm() {
