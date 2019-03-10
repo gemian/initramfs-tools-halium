@@ -182,12 +182,12 @@ mount_lvm() {
 		root_lv=*)
 			lv_list=${x#*=}
 			tell_kmsg "Found LVM system: $lv_list"
-            update_yamui "Found LVM system: $lv_list"
+			update_yamui "Found LVM system: $lv_list"
 			;;
 		esac
 	done
 
-	for lv_name in lv_list; do
+	for lv_name in $lv_list; do
 		if mount -t ext4 /dev/$lvm_vg/$lv_name /tmpmnt; then
 			# Use root of partition if /etc/os-release exists
 			if [ -e "/tmpmnt/etc/os-release" ]; then
@@ -206,7 +206,7 @@ mount_lvm() {
 	mkdir -p /externalmnt
 
 	//find external media for install image
-	EXTERNAL_MEDIA_DEVICES="/dev/mmcblk[1-9]*p[1-9]*"
+	EXTERNAL_MEDIA_DEVICES="/dev/mmcblk[1-9]*p[1-9]* /dev/sda[1-9]"
 
 	for external_drive in $EXTERNAL_MEDIA_DEVICES; do
 		[ -z "$external_drive" ] && continue
@@ -303,15 +303,39 @@ mount_lvm() {
 mount_lvm_or_stowaways() {
 	path="$1"
 
-	vglist="sailfish planetlinux"
-
-	# Check for available volume groups
-	for vgname in $vglist; do
-		if lvm vgchange -a y "$vgname"; then
-			mount_lvm "$path" "$vgname"
-			return 0
-		fi
+	# Check for a root_lv - should only check volume groups if we want to boot one
+	for x in $(cat /proc/cmdline); do
+		case ${x} in
+		root_lv=*)
+			root_lv=${x#*=}
+			tell_kmsg "Found LVM system: $lv_list"
+			;;
+		esac
 	done
+
+	if [ -n "$root_lv" ]; then
+		#Seed the list with likely names for volume groups ordered by preference
+		vglist="planetlinux sailfish"
+
+		# Check root_vg= parameter in command line, used to select between possibly multiple volume group names
+		for x in $(cat /proc/cmdline); do
+			case ${x} in
+			root_vg=*)
+				vglist=${x#*=}
+				tell_kmsg "Found LVM system: $lv_list"
+				update_yamui "Found LVM system: $lv_list"
+				;;
+			esac
+		done
+
+		# Check for available volume groups
+		for vgname in $vglist; do
+			if lvm vgchange -a y "$vgname"; then
+				mount_lvm "$path" "$vgname"
+				return 0
+			fi
+		done
+	fi
 
 	# Fallback to regular partitions
 	mount_stowaways "$path"
