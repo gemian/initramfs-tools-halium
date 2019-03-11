@@ -8,7 +8,7 @@ Vcs-Git: https://github.com/gemian/initramfs-tools-halium.git
 
 Package: initramfs-tools-halium
 Architecture: all
-Depends: initramfs-tools, dctrl-tools, zlib1g-dev, libssl-dev, busybox-static, yamui, lvm2
+Depends: initramfs-tools, dctrl-tools, zlib1g-dev, libssl-dev, busybox-static, yamui, lvm2, dpkg-dev
 Conflicts: gemini-linux-kernel-ramdisk
 Replaces: gemini-linux-kernel-ramdisk
 Description: Gemini Kernel Ramdisk

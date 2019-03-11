@@ -212,19 +212,16 @@ mount_lvm() {
 		[ -z "$external_drive" ] && continue
 		unset TYPE
 		eval "$(/sbin/blkid -c /dev/null -o export $external_drive)"
-		if test "$TYPE" = "vfat"; then
-			update_yamui "Skipping vfat $external_drive (unsupported)"
-			continue
-		fi
-		update_yamui "Test mounting external $external_drive"
-		if mount $external_drive /externalmnt; then
+
+		update_yamui "Test mounting external $external_drive of type $TYPE"
+		if mount -t $TYPE $external_drive /externalmnt; then
 			# Check for gemian-config.txt
 			[ -z "/externalmnt/gemian-config.txt" ] && continue
 			. /externalmnt/gemian-config.txt
 			# Expect to find
 			# INSTALL_IMAGE=gemian-stretch.img.xz
-			# LV_TO_REDUCE_NAME=home
-			# LV_TO_REDUCE_SIZE=10G
+			# LV_TO_REDUCE_NAME=home (optional)
+			# LV_TO_REDUCE_SIZE=10G (optional - required if LV_TO_REDUCE_NAME is set)
 			# NEW_LV_NAME=gemian
 			# NEW_LV_SIZE=10G (optional)
 
@@ -236,14 +233,17 @@ mount_lvm() {
 			fsblocks=$(dumpe2fs -h "/dev/$lvm_vg/$LV_TO_REDUCE_NAME" | grep "Block count" | awk {'print $3'})
 			fsfreeblocks=$(dumpe2fs -h "/dev/$lvm_vg/$LV_TO_REDUCE_NAME" | grep "Free blocks" | awk {'print $3'})
 
-			tell_kmsg "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
-			update_yamui "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
 
-			# Check and shrink fs
-			e2fsck -f -y "/dev/$lvm_vg/$LV_TO_REDUCE_NAME"
-			if ! lvm lvresize --resizefs --size $LV_TO_REDUCE_SIZE /dev/$lvm_vg/$LV_TO_REDUCE_NAME; then
-				halium_panic "Couldn't shrink $LV_TO_REDUCE_NAME."
-				return 1
+			if [ -n "$LV_TO_REDUCE_NAME" ]; then
+				tell_kmsg "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
+				update_yamui "/dev/$lvm_vg/$LV_TO_REDUCE_NAME - $fsfreeblocks/$fsblocks ($fsblocksize)"
+
+				# Check and shrink fs
+				e2fsck -f -y "/dev/$lvm_vg/$LV_TO_REDUCE_NAME"
+				if ! lvm lvresize --resizefs --size $LV_TO_REDUCE_SIZE /dev/$lvm_vg/$LV_TO_REDUCE_NAME; then
+					halium_panic "Couldn't shrink $LV_TO_REDUCE_NAME."
+					return 1
+				fi
 			fi
 
 			# Find new space available
@@ -253,7 +253,7 @@ mount_lvm() {
 			update_yamui "$lvm_vg - free extents - $FREE_EXTENTS"
 
 			# Create new logical volume
-			if $NEW_LV_SIZE; then
+			if [ -n "$NEW_LV_SIZE" ]; then
 				if ! lvm lvcreate -L $NEW_LV_SIZE -n $NEW_LV_NAME $lvm_vg; then
 					halium_panic "Couldn't create $NEW_LV_NAME with size $NEW_LV_SIZE on $lvm_vg."
 					return 1
