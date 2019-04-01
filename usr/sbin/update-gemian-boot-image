@@ -38,12 +38,12 @@ fi
 
 if [ -n "$root_lv" ] && [ -z "$root_vg" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o linux-boot-lvm-${root_lv}.img
+  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot-lvm-${root_lv}.img
 fi
 
 if [ -n "$root_lv" ] && [ -n "$root_vg" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_vg=${root_vg} root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o linux-boot-lvm-${root_vg}-${root_lv}.img
+  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_vg=${root_vg} root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot-lvm-${root_vg}-${root_lv}.img
 fi
 
 echo ""
