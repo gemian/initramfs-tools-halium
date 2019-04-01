@@ -58,22 +58,22 @@ echo "You need to write the correct kernel to the correct boot partition based u
 
 if [ -z "$stowaway" ] && [ -z "$root_lv" ]
 then
-  echo "eg: sudo dd if=/usr/share/kernel/linux-boot.img of=/dev/disk/by-partlabel/${boot}"
+  echo "sudo dd if=/usr/share/kernel/linux-boot.img of=/dev/disk/by-partlabel/${boot}"
 fi
 
 if [ -n "$stowaway" ]
 then
-  echo "or: sudo dd if=/usr/share/kernel/linux-boot-stowaways-${stowaway}.img of=/dev/disk/by-partlabel/${boot}"
+  echo "sudo dd if=/usr/share/kernel/linux-boot-stowaways-${stowaway}.img of=/dev/disk/by-partlabel/${boot}"
 fi
 
 if [ -n "$root_lv" ] && [ -z "$root_vg" ]
 then
-  echo "or: sudo dd if=/usr/share/kernel/linux-boot-lvm-${root_lv}.img of=/dev/disk/by-partlabel/${boot}"
+  echo "sudo dd if=/usr/share/kernel/linux-boot-lvm-${root_lv}.img of=/dev/disk/by-partlabel/${boot}"
 fi
 
 if [ -n "$root_lv" ] && [ -n "$root_vg" ]
 then
-  echo "or: sudo dd if=/usr/share/kernel/linux-boot-lvm-${root_vg}-${root_lv}.img of=/dev/disk/by-partlabel/${boot}"
+  echo "sudo dd if=/usr/share/kernel/linux-boot-lvm-${root_vg}-${root_lv}.img of=/dev/disk/by-partlabel/${boot}"
 fi
 
 echo "After writing the kernel image a reboot is necessary to use the new kernel."
