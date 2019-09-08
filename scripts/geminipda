@@ -373,7 +373,12 @@ mountroot() {
 	done
 
 	if [ -z "$path" ]; then
-		halium_panic "Couldn't find data partition."
+		update_yamui "Couldn't find data partition."
+		#Drop out to busybox
+
+		exec /bin/sh
+
+		update_yamui_exit "Couldn't find data partition - BusyBox on USB-UART"
 	fi
 
 	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/local-bottom"
