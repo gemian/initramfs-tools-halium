@@ -31,22 +31,22 @@ then
   tags_offset=0x13f80000
 fi
 
-if [[ "$cmdline" =~ ^(.*)bootpartition\=([_a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)bootpartition\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   boot="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)stowaways_os\=([_a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)stowaways_os\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   stowaway="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)root_vg\=([_a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)root_vg\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   root_vg="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)root_lv\=([_a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)root_lv\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   root_lv="${BASH_REMATCH[2]}"
 fi
