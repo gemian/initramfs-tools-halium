@@ -12,4 +12,4 @@ Depends: initramfs-tools, dctrl-tools, zlib1g-dev, libssl-dev, busybox-static, y
 Conflicts: gemini-linux-kernel-ramdisk
 Replaces: gemini-linux-kernel-ramdisk
 Description: Gemini Kernel Ramdisk
- Contains the scripts needed by update-initramfs for the gemini
+ Contains the scripts needed by update-initramfs for gemian to allow creation of boot images for Gemini PDA and Cosmo Communicator
