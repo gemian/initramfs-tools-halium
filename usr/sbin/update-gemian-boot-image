@@ -6,45 +6,73 @@ root_vg=""
 root_lv=""
 cmdline=$(</proc/cmdline)
 
-if [[ "$cmdline" =~ ^(.*)bootpartition\=([a-z0-9]*)(.*)$ ]];
+base=0x40080000
+second_offset=0x00e80000
+kernel_offset=0x00000000
+ramdisk_offset=0x04f80000
+tags_offset=0x03f80000
+pagesize=2048
+kernel="/usr/share/kernel/Image.gz-dtb"
+ramdisk="/usr/share/kernel/initrd.img-gemini.cpio.gz"
+output="/usr/share/kernel/linux-boot.img"
+cmdline_extra=""
+
+if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6797(.*)$ ]];
+then
+  ramdisk_offset=0x04f80000
+  tags_offset=0x03f80000
+fi
+
+if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6771(.*)$ ]];
+then
+  ramdisk_offset=0x14f80000
+  tags_offset=0x13f80000
+fi
+
+if [[ "$cmdline" =~ ^(.*)bootpartition\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   boot="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)stowaways_os\=([a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)stowaways_os\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   stowaway="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)root_vg\=([a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)root_vg\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   root_vg="${BASH_REMATCH[2]}"
 fi
 
-if [[ "$cmdline" =~ ^(.*)root_lv\=([a-z0-9]*)(.*)$ ]];
+if [[ "$cmdline" =~ ^(.*)root_lv\=([_a-zA-Z0-9]*)(.*)$ ]];
 then
   root_lv="${BASH_REMATCH[2]}"
 fi
 
 if [ -z "$stowaway" ] && [ -z "$root_lv" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot.img
+  output="/usr/share/kernel/linux-boot.img"
 fi
 
 if [ -n "$stowaway" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M stowaways_os=${stowaway}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot-stowaways-${stowaway}.img
+  output="/usr/share/kernel/linux-boot-stowaways-${stowaway}.img"
+  cmdline_extra="stowaways_os=${stowaway}"
 fi
 
 if [ -n "$root_lv" ] && [ -z "$root_vg" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot-lvm-${root_lv}.img
+  output="/usr/share/kernel/linux-boot-lvm-${root_lv}.img"
+  cmdline_extra="root_lv=${root_lv}"
 fi
 
 if [ -n "$root_lv" ] && [ -n "$root_vg" ]
 then
-  mkbootimg --kernel /usr/share/kernel/Image.gz-dtb --ramdisk /usr/share/kernel/initrd.img-gemini.cpio.gz --base 0x40080000 --second_offset 0x00e80000 --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M root_vg=${root_vg} root_lv=${root_lv}" --kernel_offset 0x00000000 --ramdisk_offset 0x04f80000 --tags_offset 0x03f80000 --pagesize 2048 -o /usr/share/kernel/linux-boot-lvm-${root_vg}-${root_lv}.img
+  output="/usr/share/kernel/linux-boot-lvm-${root_vg}-${root_lv}.img"
+  cmdline_extra="root_vg=${root_vg} root_lv=${root_lv}"
 fi
+
+mkbootimg --kernel ${kernel} --ramdisk ${ramdisk} --base ${base} --second_offset ${second_offset} --cmdline "bootopt=64S3,32N2,64N2 log_buf_len=4M ${cmdline_extra}" --kernel_offset ${kernel_offset} --ramdisk_offset ${ramdisk_offset} --tags_offset ${tags_offset} --pagesize ${pagesize} -o ${output}
 
 echo ""
 echo "Kernel images installed to /usr/share/kernel/"
