@@ -1,5 +1,6 @@
 #!/bin/bash
 
+device="$1"
 stowaway=""
 boot=""
 root_vg=""
@@ -17,17 +18,38 @@ ramdisk="/usr/share/kernel/initrd.img-gemini.cpio.gz"
 output="/usr/share/kernel/linux-boot.img"
 cmdline_extra=""
 
-if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6797(.*)$ ]];
+if [[ -z "$device" ]]
 then
-  ramdisk_offset=0x04f80000
-  tags_offset=0x03f80000
+  if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6797(.*)$ ]];
+  then
+    device="geminipda"
+  fi
+
+  if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6771(.*)$ ]];
+  then
+    device="cosmocom"
+  fi
 fi
 
-if [[ "$cmdline" =~ ^(.*)androidboot.hardware\=mt6771(.*)$ ]];
-then
-  ramdisk_offset=0x14f80000
-  tags_offset=0x13f80000
-fi
+case $device in
+  geminipda)
+    ramdisk_offset=0x04f80000
+    tags_offset=0x03f80000
+    ;;
+
+  cosmocom)
+    ramdisk_offset=0x14f80000
+    tags_offset=0x13f80000
+    ;;
+
+  *)
+    echo "Unknown device. Please provide either geminipda or cosmocom as an argument."
+    echo "Skipping linux-boot.img creation."
+    exit 0
+    ;;
+esac
+
+echo "Device is $device"
 
 if [[ "$cmdline" =~ ^(.*)bootpartition\=([_a-zA-Z0-9\-]*)(.*)$ ]];
 then
