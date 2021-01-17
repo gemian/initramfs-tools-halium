@@ -191,6 +191,10 @@ mount_lvm() {
 		if mount -t ext4 /dev/$lvm_vg/$lv_name /tmpmnt; then
 			# Use root of partition if /etc/os-release exists
 			if [ -e "/tmpmnt/etc/os-release" ]; then
+				# Resize file system to full size
+				resize2fs -f "/dev/$lvm_vg/$lv_name"
+				sync
+
 				mount --bind /tmpmnt ${rootmnt}
 				mkdir -p "${rootmnt}/data" # in new fs
 				update_yamui_exit "Gemian booting - /dev/$lvm_vg/$lv_name"
