@@ -308,7 +308,7 @@ mount_lvm_or_stowaways() {
 		case ${x} in
 		root_lv=*)
 			root_lv=${x#*=}
-			tell_kmsg "Found LVM system: $lv_list"
+			tell_kmsg "Found LVM system - root_lv: $root_lv"
 			;;
 		esac
 	done
@@ -322,18 +322,24 @@ mount_lvm_or_stowaways() {
 			case ${x} in
 			root_vg=*)
 				vglist=${x#*=}
-				tell_kmsg "Found LVM system: $lv_list"
-				update_yamui "Found LVM system: $lv_list"
+				tell_kmsg "Found LVM system - root_vg: $vglist"
+				update_yamui "Found LVM system - root_vg: $vglist"
 				;;
 			esac
 		done
 
-		# Check for available volume groups
-		for vgname in $vglist; do
-			if lvm vgchange -a y "$vgname"; then
-				mount_lvm "$path" "$vgname"
-				return 0
-			fi
+		tries_list="1 2 3 4 5 6 7"
+		for tries in $tries_list; do
+			tell_kmsg "LVM try: $tries"
+			# Check for available volume groups
+			for vgname in $vglist; do
+				if lvm vgchange -a y "$vgname"; then
+					tell_kmsg "LVM path: $path, vgname: $vgname"
+					mount_lvm "$path" "$vgname"
+					return 0
+				fi
+			done
+			sleep 1
 		done
 	fi
 
@@ -342,7 +348,7 @@ mount_lvm_or_stowaways() {
 }
 
 mountroot() {
-	update_yamui "Mounting Root"
+	update_yamui "Selecting Root"
 
 	# list of possible userdata partition names
 	partlist="linux userdata"
