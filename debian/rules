@@ -23,7 +23,7 @@ binary-indep:
 	install -p -d -o root -g root -m 755 debian/tmp/usr/share/initramfs-tools/res/images
 	install -p -d -o root -g root -m 755 debian/tmp/usr/sbin
 	install -p -o root -g root -m 644 conf/halium debian/tmp/usr/share/initramfs-tools/conf.d/halium
-	install -p -o root -g root -m 644 images/debian.png debian/tmp/usr/share/initramfs-tools/res/images/debian.png
+	install -p -o root -g root -m 644 images/gemian.png debian/tmp/usr/share/initramfs-tools/res/images/gemian.png
 	install -p -o root -g root -m 644 scripts/geminipda debian/tmp/usr/share/initramfs-tools/scripts/geminipda
 	install -p -o root -g root -m 755 scripts/panic/telnet debian/tmp/usr/share/initramfs-tools/scripts/panic/telnet
 	install -p -o root -g root -m 755 hooks/halium debian/tmp/usr/share/initramfs-tools/hooks/halium

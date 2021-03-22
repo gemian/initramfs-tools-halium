@@ -29,4 +29,4 @@ copy_exec /lib/$DEB_HOST_MULTIARCH/libz.so.1
 copy_exec /usr/lib/$DEB_HOST_MULTIARCH/libcrypto.so
 copy_exec /usr/lib/$DEB_HOST_MULTIARCH/libdl.so
 
-copy_file res /usr/share/initramfs-tools/res/images/debian.png /res/images/debian.png
+copy_file res /usr/share/initramfs-tools/res/images/gemian.png /res/images/gemian.png

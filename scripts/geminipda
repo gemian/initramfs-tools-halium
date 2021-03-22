@@ -19,14 +19,14 @@ tell_kmsg() {
 update_yamui() {
 	TEXT="$1"
 	kill "$YAMUIPID"
-	yamui -s 1 -t "$TEXT" -f 2 debian &
+	yamui -s 1 -t "$TEXT" -f 2 gemian &
 	YAMUIPID=$!
 }
 
 update_yamui_exit() {
 	TEXT="$1"
 	kill "$YAMUIPID"
-	yamui -s 1 -t "$TEXT" -f 3 debian
+	yamui -s 1 -t "$TEXT" -f 3 gemian
 }
 
 halium_panic() {
@@ -168,7 +168,7 @@ mount_lvm() {
 	path="$1"
 	lvm_vg="$2"
 
-	tell_kmsg "Found LVM system"
+	tell_kmsg "Found LVM system - mlvm"
 	update_yamui "Found LVM system"
 
 	lvm pvresize "$path"
@@ -181,7 +181,7 @@ mount_lvm() {
 		case ${x} in
 		root_lv=*)
 			lv_list=${x#*=}
-			tell_kmsg "Found LVM system: $lv_list"
+			tell_kmsg "Found LVM system - mlvm: $lv_list"
 			update_yamui "Found LVM system: $lv_list"
 			;;
 		esac
